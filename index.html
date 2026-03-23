@@ -3,96 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab</title>
+    <title>Song Young-Min Guitar Lab - Final Stable</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            background-color: #121212; margin: 0; color: #eee; 
-            font-family: sans-serif; overflow: hidden; 
-            display: flex; flex-direction: column; height: 100vh; 
-        }
-
-        /* 상단 바 */
-        #top-bar {
-            background: #231914; display: flex; justify-content: space-between;
-            align-items: center; padding: 10px 15px; height: 80px;
-            border-bottom: 3px solid #5d4037;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        body { background-color: #121212; margin: 0; color: #eee; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.8s ease; }
+        #top-bar { background: #231914; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 80px; border-bottom: 3px solid #5d4037; }
         .status-item { text-align: center; flex: 1; }
         .label { font-size: 10px; color: #bcaaa4; display: block; }
         .value { font-size: 18px; color: #ffca28; font-weight: bold; }
-        
-        #nextCanvas { background: rgba(0,0,0,0.5); border-radius: 4px; vertical-align: middle; }
-
-        .admin-btns { display: flex; flex-direction: column; gap: 5px; }
-        .btn-sm { 
-            background: #4e342e; color: #fff; border: 1px solid #8d6e63;
-            border-radius: 4px; padding: 4px 10px; font-size: 12px;
-        }
-
-        /* 게임 영역 */
-        #game-container { 
-            flex: 1; position: relative; display: flex; 
-            justify-content: center; align-items: center; background: #1a1a1a;
-        }
-        canvas#tetris { 
-            background: #000; border: 4px solid #4e342e;
-            max-width: 95%; max-height: 95%; 
-        }
-        
-        /* 워터마크 */
-        #watermark {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotate(-25deg);
-            font-size: 22px; color: rgba(255,255,255,0.07);
-            font-weight: 900; text-align: center; pointer-events: none; z-index: 1;
-        }
-
-        #msg-box {
-            position: absolute; top: 40%; width: 100%; text-align: center;
-            font-size: 24px; font-weight: bold; color: #ffca28;
-            text-shadow: 2px 2px 4px #000; z-index: 10; pointer-events: none;
-        }
-
-        /* 하단 컨트롤러 */
-        #controls {
-            background: #231914; display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 10px; padding: 15px; height: 140px; border-top: 3px solid #5d4037;
-        }
-        .btn-ctrl {
-            background: #6d4c41; color: #fff; border: none; border-radius: 12px;
-            font-size: 30px; display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 4px #3e2723;
-        }
-        .btn-ctrl:active { transform: translateY(2px); box-shadow: 0 2px #3e2723; background: #8d6e63; }
-        .btn-drop { background: #bf360c; font-size: 18px; font-weight: bold; }
+        #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #1a1a1a; }
+        canvas#tetris { background: #000; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; }
+        #chord-notify { position: absolute; top: 30%; width: 100%; text-align: center; font-size: 32px; font-weight: 900; color: #00e676; text-shadow: 0 0 15px #000; z-index: 50; display: none; }
+        #controls { background: #231914; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #5d4037; }
+        .btn-ctrl { background: #6d4c41; color: #fff; border: none; border-radius: 12px; font-size: 38px; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px #3e2723; }
+        .btn-ctrl:active { transform: translateY(3px); box-shadow: 0 2px #3e2723; background: #8d6e63; }
+        .btn-drop { background: #bf360c; font-size: 12px; font-weight: 900; height: 60%; align-self: center; border-radius: 8px; box-shadow: 0 3px #5f1b06; }
     </style>
 </head>
 <body>
 
+<div id="splash">
+    <h1 style="color:#ffca28; text-align:center;">SONG, YOUNG-MIN<br>Guitar Lab</h1>
+    <p style="color:#bcaaa4;">Loading Academy Edition...</p>
+</div>
+
 <div id="top-bar">
-    <div class="status-item">
-        <span class="label">NEXT</span>
-        <canvas id="nextCanvas" width="40" height="40"></canvas>
-    </div>
-    <div class="status-item">
-        <span class="label">SCORE</span>
-        <span id="score" class="value">0</span>
-    </div>
-    <div class="status-item">
-        <span class="label">TIME</span>
-        <span id="timer" class="value">00:00</span>
-    </div>
-    <div class="admin-btns">
-        <button class="btn-sm" id="pauseBtn">PAUSE</button>
-        <button class="btn-sm" id="resetBtn">RESET</button>
-    </div>
+    <div class="status-item"><span class="label">NEXT</span><canvas id="nextCanvas" width="36" height="36"></canvas></div>
+    <div class="status-item"><span class="label">SCORE</span><span id="score" class="value">0</span></div>
+    <div class="status-item"><span class="label">TIME</span><span id="timer" class="value">00:00</span></div>
+    <button onclick="location.reload()" style="background:#4e342e; color:#fff; border:1px solid #8d6e63; font-size:10px;">RESET</button>
 </div>
 
 <div id="game-container">
-    <div id="watermark">SONG, YOUNG-MIN<br>Guitar Lab</div>
+    <div id="chord-notify">MATCH!</div>
     <canvas id="tetris"></canvas>
-    <div id="msg-box"></div>
 </div>
 
 <div id="controls">
@@ -109,139 +54,147 @@
     const nCtx = nCanvas.getContext('2d');
     const scoreEl = document.getElementById('score');
     const timeEl = document.getElementById('timer');
-    const msgBox = document.getElementById('msg-box');
+    const chordNotify = document.getElementById('chord-notify');
 
     const ROWS = 18, COLS = 10;
-    let SQ = 20; // 초기값, resize에서 재계산
-
+    let SQ = 20;
     const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
     const CHORDS = [
-        {k:'CEG', n:'C Major'}, {k:'ADF', n:'D minor'}, {k:'BEG', n:'E minor'},
-        {k:'ACF', n:'F Major'}, {k:'BDG', n:'G Major'}, {k:'ACE', n:'A minor'}
+        {k:'CEG', n:'C Major', f:[261, 329, 392]}, {k:'ADF', n:'D minor', f:[293, 349, 440]},
+        {k:'BEG', n:'E minor', f:[329, 392, 493]}, {k:'ACF', n:'F Major', f:[349, 440, 523]},
+        {k:'BDG', n:'G Major', f:[392, 493, 587]}, {k:'ACE', n:'A minor', f:[440, 523, 659]},
+        {k:'BDF', n:'Bm(b5)', f:[493, 587, 698]}
     ];
 
     let board = [], score = 0, paused = false, gameOver = false;
-    let dropStart = Date.now(), gameStart = null, p = null, nextNote = '';
-
-    function resize() {
-        const availableHeight = document.getElementById('game-container').clientHeight;
-        const availableWidth = document.getElementById('game-container').clientWidth;
-        SQ = Math.min(availableWidth / (COLS + 1), availableHeight / (ROWS + 1));
-        canvas.width = COLS * SQ;
-        canvas.height = ROWS * SQ;
-        drawBoard();
-    }
-    window.addEventListener('resize', resize);
+    let p = null, nextNote = '', dropStart = Date.now(), gameStart = null;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function initBoard() {
         board = [];
         for(let r=0; r<ROWS; r++) {
             board[r] = [];
-            for(let c=0; c<COLS; c++) board[r][c] = {L:null, f:false, h:false};
+            for(let c=0; c<COLS; c++) board[r][c] = {L:null, f:false, h:false, s:1};
         }
     }
 
-    function drawSq(x, y, L, f=false, h=false) {
+    function drawSq(x, y, L, f, h, s) {
+        ctx.save();
+        ctx.translate(x*SQ + SQ/2, y*SQ + SQ/2);
+        ctx.scale(s, s);
         ctx.fillStyle = h ? "#ffd600" : (L ? (f ? "#2e7d32" : (L==='#'||L==='b' ? "#ffb300" : "#4e342e")) : "rgba(255,255,255,0.05)");
-        ctx.fillRect(x*SQ, y*SQ, SQ, SQ);
-        ctx.strokeStyle = "rgba(255,255,255,0.1)";
-        ctx.strokeRect(x*SQ, y*SQ, SQ, SQ);
+        ctx.fillRect(-SQ/2 + 1, -SQ/2 + 1, SQ - 2, SQ - 2);
         if(L) {
             ctx.fillStyle = (L==='#'||L==='b') ? "#000" : "#fff";
-            ctx.font = `bold ${SQ*0.6}px Arial`;
-            ctx.textAlign = "center";
-            ctx.fillText(L, x*SQ+SQ/2, y*SQ+SQ/2+SQ*0.2);
+            ctx.font = `bold ${SQ*0.6}px Arial`; ctx.textAlign = "center"; ctx.fillText(L, 0, SQ*0.22);
         }
+        ctx.restore();
     }
 
     function drawBoard() {
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) drawSq(c, r, board[r][c].L, board[r][c].f, board[r][c].h);
+        for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) drawSq(c, r, board[r][c].L, board[r][c].f, board[r][c].h, board[r][c].s);
+        if(p && !gameOver) drawSq(p.x, p.y, p.L, false, false, 1);
     }
 
-    function drawNext() {
-        nCtx.clearRect(0,0,40,40);
-        nCtx.fillStyle = (nextNote==='#'||nextNote==='b') ? "#ffb300" : "#ef6c00";
-        nCtx.fillRect(5,5,30,30);
-        nCtx.fillStyle = "#fff"; nCtx.font = "bold 16px Arial"; nCtx.textAlign = "center";
-        nCtx.fillText(nextNote, 20, 26);
-    }
-
-    function getRand() {
+    function getNote() {
         const r = Math.random();
-        if(r < 0.08) return '#';
-        if(r < 0.16) return 'b';
-        return NOTES[Math.floor(Math.random()*7)];
+        if(r < 0.05) return '#';
+        if(r < 0.15) return 'b';
+        return NOTES[Math.floor(Math.random()*NOTES.length)];
     }
 
     class Piece {
-        constructor(L) { this.L = L; this.x = 4; this.y = -1; }
-        moveDown() {
-            if(!this.collision(0,1)) { this.y++; drawBoard(); drawSq(this.x, this.y, this.L); }
-            else this.lock();
-        }
+        constructor(L) { this.L = L; this.x = 4; this.y = 0; }
         collision(dx, dy) {
             let nx = this.x + dx, ny = this.y + dy;
-            if(nx<0 || nx>=COLS || ny>=ROWS) return true;
-            if(ny>=0 && board[ny][nx].L) return true;
+            if(nx < 0 || nx >= COLS || ny >= ROWS) return true;
+            if(ny >= 0 && board[ny][nx].L) return true;
             return false;
         }
         lock() {
-            if(this.y < 0) { gameOver=true; showMsg("GAME OVER"); return; }
-            board[this.y][this.x] = {L: this.L, f: false, h: false};
-            if(this.L==='#') { 
-                let c=0; while(c<8){ 
-                    let rr=Math.floor(Math.random()*ROWS), rc=Math.floor(Math.random()*COLS);
-                    if(!board[rr][rc].L){board[rr][rc]={L:getRand(), f:true, h:false}; c++;}
+            if(this.y <= 0) { gameOver = true; alert("Game Over!"); return; }
+            board[this.y][this.x] = {L: this.L, f: false, h: false, s: 1};
+            
+            if(this.L === '#') { // # 블럭: 닿으면 즉시 8개 생성
+                let count = 0;
+                while(count < 8) {
+                    let rr = Math.floor(Math.random()*ROWS), rc = Math.floor(Math.random()*COLS);
+                    if(!board[rr][rc].L) { board[rr][rc] = {L: NOTES[Math.floor(Math.random()*7)], f:true, h:false, s:1}; count++; }
                 }
-                showMsg("SHARP! +8");
-            }
-            if(this.L==='b') {
+            } else if(this.L === 'b') { // b 블럭: 주변 폭발
                 for(let r=this.y-1; r<=this.y+1; r++) for(let c=this.x-1; c<=this.x+1; c++)
-                    if(r>=0 && r<ROWS && c>=0 && c<COLS) board[r][c]={L:null, f:false, h:false};
-                showMsg("FLAT! BOOM");
+                    if(r>=0 && r<ROWS && c>=0 && c<COLS) board[r][c] = {L:null, f:false, h:false, s:1};
             }
-            check();
-            p = new Piece(nextNote); nextNote = getRand(); drawNext();
+            checkBoard();
+            p = new Piece(nextNote); nextNote = getNote(); drawNext();
         }
     }
 
-    function check() {
-        let find = [];
+    function checkBoard() {
+        let toDelete = [];
+        let name = "";
+        let freqs = null;
+        const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+
         for(let r=0; r<ROWS; r++) {
             for(let c=0; c<COLS; c++) {
-                if(!board[r][c].L || board[r][c].L==='#' || board[r][c].L==='b') continue;
-                // 가로, 세로 3개만 간단히 체크 (오류 최소화)
-                [[0,1],[1,0],[1,1],[1,-1]].forEach(d => {
-                    let s = [];
+                if(!board[r][c].L || board[r][c].L === 'b') continue;
+                dirs.forEach(d => {
+                    let combo = [];
                     for(let i=0; i<3; i++) {
-                        let nr=r+d[0]*i, nc=c+d[1]*i;
-                        if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) s.push({r:nr, c:nc, L:board[nr][nc].L});
+                        let nr = r + d[0]*i, nc = c + d[1]*i;
+                        if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) combo.push({r:nr, c:nc, L:board[nr][nc].L});
                     }
-                    if(s.length===3) {
-                        let txt = s.map(v=>v.L).sort().join('');
-                        if(CHORDS.some(ch=>ch.k===txt) || (s[0].L===s[1].L && s[1].L===s[2].L)) s.forEach(v=>find.push(v));
+                    if(combo.length === 3) {
+                        let isSharp = combo.every(v => v.L === '#');
+                        let txt = combo.map(v => v.L).sort().join('');
+                        let match = CHORDS.find(ch => ch.k === txt);
+                        let isSame = (combo[0].L === combo[1].L && combo[1].L === combo[2].L);
+
+                        if(isSharp || match || isSame) {
+                            combo.forEach(pos => { if(!toDelete.some(t => t.r === pos.r && t.c === pos.c)) toDelete.push(pos); });
+                            name = isSharp ? "SHARP CLEAN!" : (match ? match.n : "3-MATCH!");
+                            if(match) freqs = match.f;
+                        }
                     }
                 });
             }
         }
-        if(find.length>0) {
-            find.forEach(v => { board[v.r][v.c].h = true; });
-            score += find.length * 10; scoreEl.innerText = score;
-            setTimeout(() => {
-                find.forEach(v => { board[v.r][v.c]={L:null, f:false, h:false}; });
-                gravity(); drawBoard();
-            }, 300);
+
+        if(toDelete.length > 0) {
+            paused = true;
+            chordNotify.innerText = name; chordNotify.style.display = "block";
+            if(freqs) playChord(freqs);
+            
+            let start = Date.now();
+            function ani() {
+                let now = Date.now() - start;
+                if(now < 700) {
+                    toDelete.forEach(v => { board[v.r][v.c].h = true; board[v.r][v.c].s = 1 + (now/700 * 3); });
+                    drawBoard(); requestAnimationFrame(ani);
+                } else {
+                    toDelete.forEach(v => { board[v.r][v.c] = {L:null, f:false, h:false, s:1}; });
+                    score += toDelete.length * 10;
+                    scoreEl.innerText = score;
+                    chordNotify.style.display = "none";
+                    applyGravity();
+                    paused = false; drawBoard(); checkBoard();
+                }
+            }
+            ani();
         }
     }
 
-    function gravity() {
+    function applyGravity() {
         for(let c=0; c<COLS; c++) {
             for(let r=ROWS-1; r>0; r--) {
                 if(!board[r][c].L) {
                     for(let k=r-1; k>=0; k--) {
                         if(board[k][c].L && !board[k][c].f) {
-                            board[r][c]=board[k][c]; board[k][c]={L:null, f:false, h:false}; break;
+                            board[r][c] = board[k][c];
+                            board[k][c] = {L:null, f:false, h:false, s:1};
+                            break;
                         }
                     }
                 }
@@ -249,39 +202,52 @@
         }
     }
 
-    function showMsg(t) { msgBox.innerText = t; setTimeout(()=>msgBox.innerText="", 1500); }
+    function playChord(freqs) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        freqs.forEach((f, i) => {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(f, audioCtx.currentTime + (i*0.05));
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 1);
+        });
+    }
 
-    function resetGame() {
-        initBoard(); score=0; scoreEl.innerText="0"; gameOver=false; paused=false;
-        gameStart = Date.now();
-        p = new Piece(getRand()); nextNote = getRand();
-        drawNext(); resize();
+    function drawNext() {
+        nCtx.clearRect(0,0,36,36); nCtx.fillStyle = "#ffca28"; nCtx.font = "bold 18px Arial";
+        nCtx.textAlign = "center"; nCtx.fillText(nextNote, 18, 24);
     }
 
     function run() {
         if(!paused && !gameOver) {
             let now = Date.now();
-            if(now - dropStart > 800) { p.moveDown(); dropStart = now; }
+            if(now - dropStart > 900) {
+                if(!p.collision(0,1)) { p.y++; drawBoard(); } else { p.lock(); }
+                dropStart = now;
+            }
             let diff = Math.floor((now - gameStart)/1000);
             timeEl.innerText = `${Math.floor(diff/60).toString().padStart(2,'0')}:${(diff%60).toString().padStart(2,'0')}`;
         }
         requestAnimationFrame(run);
     }
 
-    // 버튼 이벤트
-    const btn = (id, fn) => {
-        const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); if(!paused && !gameOver) fn(); });
-    };
-    btn('leftBtn', () => { if(!p.collision(-1,0)) p.x--; drawBoard(); p.draw(); });
-    btn('rightBtn', () => { if(!p.collision(1,0)) p.x++; drawBoard(); p.draw(); });
-    btn('downBtn', () => p.moveDown());
-    btn('dropBtn', () => { while(!p.collision(0,1)) p.y++; p.lock(); });
-    
-    document.getElementById('pauseBtn').addEventListener('click', () => { paused = !paused; showMsg(paused?"PAUSE":"RESUME"); });
-    document.getElementById('resetBtn').addEventListener('click', () => { if(confirm("리셋할까요?")) resetGame(); });
+    // 컨트롤 이벤트
+    document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)) p.x--; drawBoard(); });
+    document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)) p.x++; drawBoard(); });
+    document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)) p.y++; drawBoard(); });
+    document.getElementById('dropBtn').addEventListener('touchstart', (e) => { e.preventDefault(); while(!p.collision(0,1)) p.y++; p.lock(); drawBoard(); });
 
-    resetGame(); run();
+    window.onload = () => {
+        initBoard(); resize();
+        p = new Piece(getNote()); nextNote = getNote(); drawNext();
+        setTimeout(() => {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => document.getElementById('splash').style.display='none', 800);
+            gameStart = Date.now(); run();
+        }, 1500);
+    };
+    window.onresize = resize;
 </script>
 </body>
 </html>
