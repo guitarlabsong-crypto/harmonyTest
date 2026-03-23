@@ -3,220 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Music Tetris</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-mini.min.js"></script>
+    <title>Song Young-Min Guitar Lab</title>
     <style>
-        body { margin: 0; background: #222; overflow: hidden; touch-action: none; font-family: sans-serif; }
-        canvas { display: block; margin: 0 auto; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background-color: #121212; margin: 0; color: #eee; 
+            font-family: sans-serif; overflow: hidden; 
+            display: flex; flex-direction: column; height: 100vh; 
+        }
+
+        /* 상단 바 */
+        #top-bar {
+            background: #231914; display: flex; justify-content: space-between;
+            align-items: center; padding: 10px 15px; height: 80px;
+            border-bottom: 3px solid #5d4037;
+        }
+        .status-item { text-align: center; flex: 1; }
+        .label { font-size: 10px; color: #bcaaa4; display: block; }
+        .value { font-size: 18px; color: #ffca28; font-weight: bold; }
+        
+        #nextCanvas { background: rgba(0,0,0,0.5); border-radius: 4px; vertical-align: middle; }
+
+        .admin-btns { display: flex; flex-direction: column; gap: 5px; }
+        .btn-sm { 
+            background: #4e342e; color: #fff; border: 1px solid #8d6e63;
+            border-radius: 4px; padding: 4px 10px; font-size: 12px;
+        }
+
+        /* 게임 영역 */
+        #game-container { 
+            flex: 1; position: relative; display: flex; 
+            justify-content: center; align-items: center; background: #1a1a1a;
+        }
+        canvas#tetris { 
+            background: #000; border: 4px solid #4e342e;
+            max-width: 95%; max-height: 95%; 
+        }
+        
+        /* 워터마크 */
+        #watermark {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 22px; color: rgba(255,255,255,0.07);
+            font-weight: 900; text-align: center; pointer-events: none; z-index: 1;
+        }
+
+        #msg-box {
+            position: absolute; top: 40%; width: 100%; text-align: center;
+            font-size: 24px; font-weight: bold; color: #ffca28;
+            text-shadow: 2px 2px 4px #000; z-index: 10; pointer-events: none;
+        }
+
+        /* 하단 컨트롤러 */
+        #controls {
+            background: #231914; display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; padding: 15px; height: 140px; border-top: 3px solid #5d4037;
+        }
+        .btn-ctrl {
+            background: #6d4c41; color: #fff; border: none; border-radius: 12px;
+            font-size: 30px; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px #3e2723;
+        }
+        .btn-ctrl:active { transform: translateY(2px); box-shadow: 0 2px #3e2723; background: #8d6e63; }
+        .btn-drop { background: #bf360c; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
+
+<div id="top-bar">
+    <div class="status-item">
+        <span class="label">NEXT</span>
+        <canvas id="nextCanvas" width="40" height="40"></canvas>
+    </div>
+    <div class="status-item">
+        <span class="label">SCORE</span>
+        <span id="score" class="value">0</span>
+    </div>
+    <div class="status-item">
+        <span class="label">TIME</span>
+        <span id="timer" class="value">00:00</span>
+    </div>
+    <div class="admin-btns">
+        <button class="btn-sm" id="pauseBtn">PAUSE</button>
+        <button class="btn-sm" id="resetBtn">RESET</button>
+    </div>
+</div>
+
+<div id="game-container">
+    <div id="watermark">SONG, YOUNG-MIN<br>Guitar Lab</div>
+    <canvas id="tetris"></canvas>
+    <div id="msg-box"></div>
+</div>
+
+<div id="controls">
+    <button class="btn-ctrl" id="leftBtn">◀</button>
+    <button class="btn-ctrl" id="downBtn">▼</button>
+    <button class="btn-ctrl" id="rightBtn">▶</button>
+    <button class="btn-ctrl btn-drop" id="dropBtn">DROP</button>
+</div>
+
 <script>
-const ROWS = 18;
-const COLS = 10;
-const BLOCK_SIZE = 30; // 화면 크기에 따라 조정됨
+    const canvas = document.getElementById('tetris');
+    const ctx = canvas.getContext('2d');
+    const nCanvas = document.getElementById('nextCanvas');
+    const nCtx = nCanvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('timer');
+    const msgBox = document.getElementById('msg-box');
 
-const config = {
-    type: Phaser.AUTO,
-    width: 360,
-    height: 740,
-    backgroundColor: '#333',
-    parent: 'game-container',
-    scene: { preload: preload, create: create, update: update }
-};
+    const ROWS = 18, COLS = 10;
+    let SQ = 20; // 초기값, resize에서 재계산
 
-const game = new Phaser.Game(config);
+    const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const CHORDS = [
+        {k:'CEG', n:'C Major'}, {k:'ADF', n:'D minor'}, {k:'BEG', n:'E minor'},
+        {k:'ACF', n:'F Major'}, {k:'BDG', n:'G Major'}, {k:'ACE', n:'A minor'}
+    ];
 
-let grid = [];
-let currentBlock = null;
-let nextBlockType = null;
-let score = 0;
-let scoreText, nextText;
-let isPaused = false;
-let dropTimer = 0;
-const dropInterval = 1000;
+    let board = [], score = 0, paused = false, gameOver = false;
+    let dropStart = Date.now(), gameStart = null, p = null, nextNote = '';
 
-// 메이저/마이너 코드 데이터베이스
-const CHORDS = {
-    MAJOR: [['C','E','G'], ['F','A','C'], ['G','B','D'], ['D','F#','A'], ['A','C#','E'], ['E','G#','B']],
-    MINOR: [['A','C','E'], ['D','F','A'], ['E','G','B'], ['B','D','F#'], ['F#','A','C#']]
-};
-
-function preload() {
-    // 필요한 경우 에셋 로드 (여기서는 그래픽으로 대체)
-}
-
-function create() {
-    const scene = this;
-    
-    // 9. 배경 워터마크
-    const watermark = scene.add.text(180, 300, 'SONG, YOUNG-MIN\nGuitar Lab', {
-        fontSize: '32px', color: '#ffffff', align: 'center', alpha: 0.1
-    }).setOrigin(0.5);
-
-    // 그리드 초기화
-    for(let y=0; y<ROWS; y++) {
-        grid[y] = Array(COLS).fill(null);
+    function resize() {
+        const availableHeight = document.getElementById('game-container').clientHeight;
+        const availableWidth = document.getElementById('game-container').clientWidth;
+        SQ = Math.min(availableWidth / (COLS + 1), availableHeight / (ROWS + 1));
+        canvas.width = COLS * SQ;
+        canvas.height = ROWS * SQ;
+        drawBoard();
     }
+    window.addEventListener('resize', resize);
 
-    // 인터페이스 레이아웃
-    scoreText = scene.add.text(20, 20, 'Score: 0', { fontSize: '20px', fill: '#fff' });
-    nextText = scene.add.text(20, 50, 'Next: ', { fontSize: '18px', fill: '#ffa500' });
-    
-    // 11. 일시정지 버튼 (우상단)
-    const pauseBtn = scene.add.text(300, 20, 'P', { 
-        fontSize: '24px', backgroundColor: '#555', padding: 5 
-    }).setInteractive().on('pointerdown', () => {
-        isPaused = !isPaused;
-        pauseBtn.setText(isPaused ? '▶' : 'P');
-    });
-
-    // 7. 확률 기반 블럭 생성
-    nextBlockType = getRandomBlockType();
-    spawnBlock(scene);
-
-    // 10. 조작키 (모바일용 하단 UI)
-    createControls(scene);
-}
-
-function getRandomBlockType() {
-    const rand = Math.random() * 100;
-    if (rand < 8) return '#';      // 8%
-    if (rand < 20) return 'b';     // 12%
-    const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    return notes[Math.floor(Math.random() * notes.length)]; // 80%
-}
-
-function spawnBlock(scene) {
-    const type = nextBlockType;
-    nextBlockType = getRandomBlockType();
-    nextText.setText('Next: ' + nextBlockType);
-
-    currentBlock = {
-        x: 4,
-        y: 0,
-        type: type,
-        container: scene.add.container(4 * 30 + 30, 100)
-    };
-
-    const rect = scene.add.rectangle(0, 0, 28, 28, getBlockColor(type)).setStrokeStyle(2, 0xffffff);
-    const txt = scene.add.text(0, 0, type, { fontSize: '18px', color: '#000' }).setOrigin(0.5);
-    currentBlock.container.add([rect, txt]);
-}
-
-function getBlockColor(type) {
-    if (type === '#') return 0xffa500; // Orange
-    if (type === 'b') return 0x5555ff; // Blue
-    return 0xeeeeee;
-}
-
-function update(time, delta) {
-    if (isPaused || !currentBlock) return;
-
-    dropTimer += delta;
-    if (dropTimer > dropInterval) {
-        moveBlock(0, 1);
-        dropTimer = 0;
-    }
-}
-
-function moveBlock(dx, dy) {
-    if (canMove(currentBlock.x + dx, currentBlock.y + dy)) {
-        currentBlock.x += dx;
-        currentBlock.y += dy;
-        updateBlockPosition();
-    } else if (dy > 0) {
-        lockBlock();
-    }
-}
-
-function canMove(nx, ny) {
-    if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
-    if (ny >= 0 && grid[ny][nx]) return false;
-    return true;
-}
-
-function updateBlockPosition() {
-    currentBlock.container.x = currentBlock.x * 30 + 45;
-    currentBlock.container.y = currentBlock.y * 30 + 100;
-}
-
-function lockBlock() {
-    const { x, y, type, container } = currentBlock;
-    grid[y][x] = { type, container };
-    
-    // 특수 기능 처리
-    if (type === '#') {
-        handleSharpEffect(x, y);
-    } else if (type === 'b') {
-        handleFlatEffect(x, y);
-    } else {
-        checkMatches();
-    }
-
-    currentBlock = null;
-    spawnBlock(game.scene.scenes[0]);
-}
-
-// 7. # 블럭 기능: 랜덤 5개 생성
-function handleSharpEffect(x, y) {
-    const scene = game.scene.scenes[0];
-    grid[y][x].container.destroy();
-    grid[y][x] = null;
-
-    let count = 0;
-    while(count < 5) {
-        let rx = Math.floor(Math.random() * COLS);
-        let ry = Math.floor(Math.random() * (ROWS - 5) + 5);
-        if (!grid[ry][rx]) {
-            const type = ['C','D','E','F','G','A','B'][Math.floor(Math.random()*7)];
-            const cont = scene.add.container(rx * 30 + 45, ry * 30 + 100);
-            cont.add([
-                scene.add.rectangle(0, 0, 28, 28, 0xeeeeee).setStrokeStyle(2, 0xffffff),
-                scene.add.text(0, 0, type, { fontSize: '18px', color: '#000' }).setOrigin(0.5)
-            ]);
-            grid[ry][rx] = { type, container: cont };
-            count++;
+    function initBoard() {
+        board = [];
+        for(let r=0; r<ROWS; r++) {
+            board[r] = [];
+            for(let c=0; c<COLS; c++) board[r][c] = {L:null, f:false, h:false};
         }
     }
-    checkMatches();
-}
 
-// 7. b 블럭 기능: 주변 8칸 폭발
-function handleFlatEffect(x, y) {
-    const scene = game.scene.scenes[0];
-    for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-            let targetY = y + i, targetX = x + j;
-            if (grid[targetY] && grid[targetX] && grid[targetY][targetX]) {
-                grid[targetY][targetX].container.destroy();
-                grid[targetY][targetX] = null;
+    function drawSq(x, y, L, f=false, h=false) {
+        ctx.fillStyle = h ? "#ffd600" : (L ? (f ? "#2e7d32" : (L==='#'||L==='b' ? "#ffb300" : "#4e342e")) : "rgba(255,255,255,0.05)");
+        ctx.fillRect(x*SQ, y*SQ, SQ, SQ);
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.strokeRect(x*SQ, y*SQ, SQ, SQ);
+        if(L) {
+            ctx.fillStyle = (L==='#'||L==='b') ? "#000" : "#fff";
+            ctx.font = `bold ${SQ*0.6}px Arial`;
+            ctx.textAlign = "center";
+            ctx.fillText(L, x*SQ+SQ/2, y*SQ+SQ/2+SQ*0.2);
+        }
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) drawSq(c, r, board[r][c].L, board[r][c].f, board[r][c].h);
+    }
+
+    function drawNext() {
+        nCtx.clearRect(0,0,40,40);
+        nCtx.fillStyle = (nextNote==='#'||nextNote==='b') ? "#ffb300" : "#ef6c00";
+        nCtx.fillRect(5,5,30,30);
+        nCtx.fillStyle = "#fff"; nCtx.font = "bold 16px Arial"; nCtx.textAlign = "center";
+        nCtx.fillText(nextNote, 20, 26);
+    }
+
+    function getRand() {
+        const r = Math.random();
+        if(r < 0.08) return '#';
+        if(r < 0.16) return 'b';
+        return NOTES[Math.floor(Math.random()*7)];
+    }
+
+    class Piece {
+        constructor(L) { this.L = L; this.x = 4; this.y = -1; }
+        moveDown() {
+            if(!this.collision(0,1)) { this.y++; drawBoard(); drawSq(this.x, this.y, this.L); }
+            else this.lock();
+        }
+        collision(dx, dy) {
+            let nx = this.x + dx, ny = this.y + dy;
+            if(nx<0 || nx>=COLS || ny>=ROWS) return true;
+            if(ny>=0 && board[ny][nx].L) return true;
+            return false;
+        }
+        lock() {
+            if(this.y < 0) { gameOver=true; showMsg("GAME OVER"); return; }
+            board[this.y][this.x] = {L: this.L, f: false, h: false};
+            if(this.L==='#') { 
+                let c=0; while(c<8){ 
+                    let rr=Math.floor(Math.random()*ROWS), rc=Math.floor(Math.random()*COLS);
+                    if(!board[rr][rc].L){board[rr][rc]={L:getRand(), f:true, h:false}; c++;}
+                }
+                showMsg("SHARP! +8");
+            }
+            if(this.L==='b') {
+                for(let r=this.y-1; r<=this.y+1; r++) for(let c=this.x-1; c<=this.x+1; c++)
+                    if(r>=0 && r<ROWS && c>=0 && c<COLS) board[r][c]={L:null, f:false, h:false};
+                showMsg("FLAT! BOOM");
+            }
+            check();
+            p = new Piece(nextNote); nextNote = getRand(); drawNext();
+        }
+    }
+
+    function check() {
+        let find = [];
+        for(let r=0; r<ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                if(!board[r][c].L || board[r][c].L==='#' || board[r][c].L==='b') continue;
+                // 가로, 세로 3개만 간단히 체크 (오류 최소화)
+                [[0,1],[1,0],[1,1],[1,-1]].forEach(d => {
+                    let s = [];
+                    for(let i=0; i<3; i++) {
+                        let nr=r+d[0]*i, nc=c+d[1]*i;
+                        if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) s.push({r:nr, c:nc, L:board[nr][nc].L});
+                    }
+                    if(s.length===3) {
+                        let txt = s.map(v=>v.L).sort().join('');
+                        if(CHORDS.some(ch=>ch.k===txt) || (s[0].L===s[1].L && s[1].L===s[2].L)) s.forEach(v=>find.push(v));
+                    }
+                });
+            }
+        }
+        if(find.length>0) {
+            find.forEach(v => { board[v.r][v.c].h = true; });
+            score += find.length * 10; scoreEl.innerText = score;
+            setTimeout(() => {
+                find.forEach(v => { board[v.r][v.c]={L:null, f:false, h:false}; });
+                gravity(); drawBoard();
+            }, 300);
+        }
+    }
+
+    function gravity() {
+        for(let c=0; c<COLS; c++) {
+            for(let r=ROWS-1; r>0; r--) {
+                if(!board[r][c].L) {
+                    for(let k=r-1; k>=0; k--) {
+                        if(board[k][c].L && !board[k][c].f) {
+                            board[r][c]=board[k][c]; board[k][c]={L:null, f:false, h:false}; break;
+                        }
+                    }
+                }
             }
         }
     }
-}
 
-function checkMatches() {
-    // 3, 5, 8번 로직: 가로/세로/대각선 코드 및 동일 알파벳 체크
-    // 실제 구현 시 3개 조합의 순열을 체크하여 Major/Minor 판정 로직이 들어갑니다.
-    // 여기서는 간단한 매칭 예시만 보여주며, 점수 가중치를 적용합니다.
-    
-    // (이 부분에 그리드 전체를 탐색하며 3칸 연속성 및 코드 구성음 확인 로직 추가)
-}
+    function showMsg(t) { msgBox.innerText = t; setTimeout(()=>msgBox.innerText="", 1500); }
 
-function createControls(scene) {
-    const btnStyle = { fontSize: '32px', backgroundColor: '#777', padding: 15 };
+    function resetGame() {
+        initBoard(); score=0; scoreEl.innerText="0"; gameOver=false; paused=false;
+        gameStart = Date.now();
+        p = new Piece(getRand()); nextNote = getRand();
+        drawNext(); resize();
+    }
+
+    function run() {
+        if(!paused && !gameOver) {
+            let now = Date.now();
+            if(now - dropStart > 800) { p.moveDown(); dropStart = now; }
+            let diff = Math.floor((now - gameStart)/1000);
+            timeEl.innerText = `${Math.floor(diff/60).toString().padStart(2,'0')}:${(diff%60).toString().padStart(2,'0')}`;
+        }
+        requestAnimationFrame(run);
+    }
+
+    // 버튼 이벤트
+    const btn = (id, fn) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); if(!paused && !gameOver) fn(); });
+    };
+    btn('leftBtn', () => { if(!p.collision(-1,0)) p.x--; drawBoard(); p.draw(); });
+    btn('rightBtn', () => { if(!p.collision(1,0)) p.x++; drawBoard(); p.draw(); });
+    btn('downBtn', () => p.moveDown());
+    btn('dropBtn', () => { while(!p.collision(0,1)) p.y++; p.lock(); });
     
-    // 좌
-    scene.add.text(50, 650, '◀', btnStyle).setInteractive().on('pointerdown', () => moveBlock(-1, 0));
-    // 우
-    scene.add.text(250, 650, '▶', btnStyle).setInteractive().on('pointerdown', () => moveBlock(1, 0));
-    // 하
-    scene.add.text(150, 650, '▼', btnStyle).setInteractive().on('pointerdown', () => moveBlock(0, 1));
-    // 드랍 (작게)
-    scene.add.text(300, 600, 'DROP', { fontSize: '16px', backgroundColor: '#444', padding: 8 })
-        .setInteractive().on('pointerdown', () => { while(canMove(currentBlock.x, currentBlock.y+1)) moveBlock(0, 1); });
-}
+    document.getElementById('pauseBtn').addEventListener('click', () => { paused = !paused; showMsg(paused?"PAUSE":"RESUME"); });
+    document.getElementById('resetBtn').addEventListener('click', () => { if(confirm("리셋할까요?")) resetGame(); });
+
+    resetGame(); run();
 </script>
 </body>
 </html>
