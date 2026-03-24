@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Pro Edition v6</title>
+    <title>Song Young-Min Guitar Lab - Pro Edition v7</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
         body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
@@ -14,20 +14,26 @@
         .value { font-size: 18px; color: #ffca28; font-weight: bold; }
         #nextContainer { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: inline-block; border: 1px solid #5d4037; }
         #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; }
-        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 2; }
-        #watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: 900; color: rgba(62, 39, 35, 0.1); white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; }
+        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 2; position: relative; }
+        /* 3. 중앙 로고 복구 및 가독성 강화 */
+        #watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 900; color: rgba(62, 39, 35, 0.15); white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; line-height: 1.2; }
         #chord-notify { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: #ffca28; z-index: 50; display: none; pointer-events: none; animation: pop 0.8s ease; }
         @keyframes pop { 0% {transform:scale(0.5);} 50% {transform:scale(1.2);} 100% {transform:scale(1);} }
+        /* 모달 스타일 복구 */
+        .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #231914; border: 3px solid #ffca28; padding: 20px; text-align: center; z-index: 150; display: none; width: 80%; border-radius: 15px; color: #fff; }
+        .btn-yes { background: #bf360c; color: white; padding: 10px 20px; border:none; border-radius:8px; margin:5px; font-weight:bold; }
+        .btn-no { background: #6d4c41; color: white; padding: 10px 20px; border:none; border-radius:8px; margin:5px; font-weight:bold; }
         #controls { background: #231914; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #5d4037; }
         .btn-ctrl { background: #6d4c41; color: #fff; border: none; border-radius: 12px; font-size: 38px; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px #3e2723; }
         .btn-drop { background: #bf360c; font-size: 12px; font-weight: 900; height: 60%; align-self: center; border-radius: 8px; }
+        .small-btn { padding: 6px 10px; font-size: 11px; font-weight: bold; background: #4e342e; color: #fff; border: 1px solid #8d6e63; border-radius: 4px; margin-bottom: 3px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="splash">
     <h1 style="color:#ffca28; text-align:center;">SONG, YOUNG-MIN<br>Guitar Lab</h1>
-    <p style="color:#bcaaa4;">Pro Sound & Logic v6</p>
+    <p style="color:#bcaaa4;">Pro Sound & Logic v7</p>
 </div>
 
 <div id="top-bar">
@@ -35,11 +41,17 @@
     <div class="status-item"><span class="label">SCORE</span><span id="score" class="value">0</span></div>
     <div class="status-item"><span class="label">TIME</span><span id="timer" class="value">00:00</span></div>
     <div class="status-item"><span class="label">LEVEL</span><span id="level" class="value">1</span></div>
+    <div style="display:flex; flex-direction:column; padding-left: 5px;">
+        <button class="small-btn" onclick="togglePause()">PAUSE</button>
+        <button class="small-btn" onclick="openResetModal()">RESET</button>
+    </div>
 </div>
 
 <div id="game-container">
     <div id="watermark">SONG, YOUNG-MIN<br>Guitar Lab</div>
     <div id="chord-notify">MATCH!</div>
+    <div id="pauseOverlay" class="modal"><h2>PAUSED</h2><button class="btn-no" onclick="togglePause()">RESUME</button></div>
+    <div id="resetModal" class="modal"><h2>RESTART?</h2><button class="btn-yes" onclick="location.reload()">YES</button><button class="btn-no" onclick="closeResetModal()">NO</button></div>
     <canvas id="tetris"></canvas>
 </div>
 
@@ -69,14 +81,29 @@
         {k:'BDF', n:'Bm(b5)', f:[493.8, 587.3, 698.4]}
     ];
 
-    let board = [], score = 0, paused = false, gameOver = false;
+    let board = [], score = 0, paused = false, isUserPaused = false, gameOver = false;
     let p = null, nextNote = '', dropStart = Date.now(), gameStart = null;
-    let lastRiseTime = 0; // 1. 1분 체크용
+    let lastRiseTime = 0; 
     let audioCtx = null;
 
     function initAudio() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // 2. 블록 상승 전용 효과음 (Slide Up 느낌)
+    function playRiseSfx() {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.3);
+        g.gain.setValueAtTime(0.1, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(); osc.stop(now + 0.3);
     }
 
     function playHit() {
@@ -108,7 +135,6 @@
     }
 
     function drawBlock(ctxObj, x, y, L, f, h, s, size) {
-        // 3. 500점마다 색상 변경 로직
         const level = Math.floor(score / 500);
         const colors = ["#4e342e", "#2e7d32", "#1565c0", "#6a1b9a", "#bf360c"];
         const color = colors[level % colors.length];
@@ -147,11 +173,12 @@
         return NOTES[Math.floor(Math.random()*7)];
     }
 
-    // 1. 1분마다 랜덤 알파벳 한 줄 상승 (#, b 제외)
+    // 2. 1분마다 상승 및 효과음 적용
     function riseBoard() {
+        playRiseSfx();
         for (let r = 0; r < ROWS - 1; r++) board[r] = board[r + 1];
         board[ROWS - 1] = Array.from({length: COLS}, () => ({
-            L: NOTES[Math.floor(Math.random() * 7)], f: true, h: false, s: 1 // f:true는 #블럭처럼 고정됨을 의미
+            L: NOTES[Math.floor(Math.random() * 7)], f: true, h: false, s: 1 
         }));
         if(p && p.collision(0,0)) gameOver = true;
     }
@@ -190,11 +217,13 @@
         findConnectedSameNotes(r, c+1, note, list); findConnectedSameNotes(r, c-1, note, list);
     }
 
+    // 2. 파괴 로직 수정: 오직 Triad 코드 완성시에만 파괴
     function checkBoard() {
         let toDel = new Set(); let currentChordFreqs = null; let currentChordName = "";
         const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+        
         for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) {
-            if(!board[r][c].L || board[r][c].L==='b') continue;
+            if(!board[r][c].L || board[r][c].L==='b' || board[r][c].L==='#') continue;
             dirs.forEach(d => {
                 let combo = []; for(let i=0; i<3; i++) {
                     let nr=r+d[0]*i, nc=c+d[1]*i;
@@ -203,10 +232,10 @@
                 if(combo.length===3) {
                     let txt = combo.map(v=>v.L).sort().join('');
                     let match = CHORDS.find(ch=>ch.k===txt);
-                    let isSame = (combo[0].L===combo[1].L && combo[1].L===combo[2].L);
-                    if(match || isSame) {
-                        currentChordName = match ? match.n : `${combo[0].L} Triple`;
-                        if(match) currentChordFreqs = match.f;
+                    // 같은 글자(CCC) 파괴 로직 제거 (요청사항: 코드 완성된 경우에만)
+                    if(match) {
+                        currentChordName = match.n;
+                        currentChordFreqs = match.f;
                         combo.forEach(pos => findConnectedSameNotes(pos.r, pos.c, board[pos.r][pos.c].L, toDel));
                     }
                 }
@@ -226,7 +255,7 @@
                     score += toDel.size * 10; scoreEl.innerText = score;
                     document.getElementById('level').innerText = Math.floor(score/500) + 1;
                     chordNotify.style.display = "none";
-                    applyGravity(); // 2. 여기서 공중 블록 유지 로직 실행
+                    applyGravity(); 
                     paused = false; drawBoard(); checkBoard();
                 }
             }
@@ -234,19 +263,16 @@
         }
     }
 
-    // 2. 중력 로직 수정: f(fixed) 속성이 true인 블록(#블록 생성/상승 블록)은 아래로 떨어지지 않음
     function applyGravity() {
         for(let c=0; c<COLS; c++) {
             for(let r=ROWS-1; r>0; r--) {
                 if(!board[r][c].L) {
                     for(let k=r-1; k>=0; k--) {
-                        // 일반 유저가 떨어뜨린 블록(f:false)만 아래로 떨어짐
                         if(board[k][c].L && !board[k][c].f) {
                             board[r][c]=board[k][c];
                             board[k][c]={L:null,f:false,h:false,s:1};
                             break;
                         }
-                        // 만약 고정 블록(f:true)을 만나면 그 위로는 중력 적용 안 함 (유지)
                         if(board[k][c].L && board[k][c].f) break;
                     }
                 }
@@ -254,14 +280,22 @@
         }
     }
 
+    // 일시정지 및 리셋 기능 복구
+    function togglePause() { 
+        if(gameOver) return;
+        isUserPaused = !isUserPaused; 
+        document.getElementById('pauseOverlay').style.display = isUserPaused ? 'block' : 'none'; 
+    }
+    function openResetModal() { isUserPaused = true; document.getElementById('resetModal').style.display = 'block'; }
+    function closeResetModal() { isUserPaused = false; document.getElementById('resetModal').style.display = 'none'; }
+
     function run() {
-        if(!paused && !gameOver) {
+        if(!paused && !isUserPaused && !gameOver) {
             let now = Date.now();
             if(now - dropStart > 900) {
                 if(!p.collision(0,1)) { p.y++; } else { p.lock(); }
                 dropStart = now;
             }
-            // 1. 1분마다 상승 체크
             if(gameStart && now - lastRiseTime > 60000) {
                 riseBoard(); lastRiseTime = now;
             }
@@ -280,10 +314,10 @@
         drawBoard();
     }
 
-    document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)) p.x--; });
-    document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)) p.x++; });
-    document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)) p.y++; });
-    document.getElementById('dropBtn').addEventListener('touchstart', (e) => { e.preventDefault(); while(!p.collision(0,1)) p.y++; p.lock(); });
+    document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)&&!isUserPaused) p.x--; });
+    document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)&&!isUserPaused) p.x++; });
+    document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)&&!isUserPaused) p.y++; });
+    document.getElementById('dropBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!isUserPaused){while(!p.collision(0,1)) p.y++; p.lock();} });
 
     window.onload = () => {
         initBoard(); resize();
