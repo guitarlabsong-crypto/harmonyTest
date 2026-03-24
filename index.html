@@ -3,35 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Pro Edition v10</title>
+    <title>Song Young-Min Guitar Lab - Pro Edition v11</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
-        body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; transition: opacity 0.8s ease; }
-        #top-bar { background: #231914; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 90px; border-bottom: 3px solid #5d4037; }
+        body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #top-bar { background: #231914; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 90px; border-bottom: 3px solid #5d4037; z-index: 10; }
         .status-item { text-align: center; flex: 1; }
         .label { font-size: 10px; color: #bcaaa4; display: block; margin-bottom: 2px; }
         .value { font-size: 18px; color: #ffca28; font-weight: bold; }
         #nextContainer { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: inline-block; border: 1px solid #5d4037; }
-        #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; }
-        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 2; position: relative; }
-        /* 주황색 정자 워터마크 추가 */
-        #watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; font-weight: bold; color: rgba(255, 167, 38, 0.2); white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; font-family: 'Malgun Gothic', sans-serif; }
+        #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; overflow: hidden; }
+        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 5; position: relative; }
+        
+        /* 중앙 인트로 로고: 주황색 투명도 70% 정자체 */
+        #watermark { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            font-size: 24px; font-weight: 800; color: rgba(255, 120, 0, 0.7); 
+            white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; 
+            letter-spacing: 1px; line-height: 1.4;
+        }
+
         #chord-notify { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 44px; font-weight: 900; color: #ffca28; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); z-index: 50; display: none; pointer-events: none; animation: pop 1s ease; }
-        @keyframes pop { 0% {transform:scale(0.5); opacity:0;} 20% {transform:scale(1.2); opacity:1;} 80% {transform:scale(1); opacity:1;} 100% {transform:scale(0.8); opacity:0;} }
+        @keyframes pop { 0% {transform:scale(0.5); opacity:0;} 20% {transform:scale(1.2); opacity:1;} 100% {transform:scale(0.8); opacity:0;} }
         .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #231914; border: 3px solid #ffca28; padding: 20px; text-align: center; z-index: 150; display: none; width: 80%; border-radius: 15px; color: #fff; }
-        #controls { background: #231914; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #5d4037; }
+        #controls { background: #231914; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #5d4037; z-index: 10; }
         .btn-ctrl { background: #6d4c41; color: #fff; border: none; border-radius: 12px; font-size: 38px; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px #3e2723; }
         .btn-drop { background: #bf360c; font-size: 12px; font-weight: 900; height: 60%; align-self: center; border-radius: 8px; }
         .small-btn { padding: 6px 10px; font-size: 11px; font-weight: bold; background: #4e342e; color: #fff; border: 1px solid #8d6e63; border-radius: 4px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
-
-<div id="splash">
-    <h1 style="color:#ffca28; text-align:center;">SONG, YOUNG-MIN<br>Guitar Lab</h1>
-    <p style="color:#bcaaa4;">Pro Sound & Logic v10</p>
-</div>
 
 <div id="top-bar">
     <div class="status-item"><span class="label">NEXT</span><div id="nextContainer"><canvas id="nextCanvas" width="50" height="50"></canvas></div></div>
@@ -40,7 +41,7 @@
     <div class="status-item"><span class="label">LEVEL</span><span id="level" class="value">1</span></div>
     <div style="display:flex; flex-direction:column; gap:2px;">
         <button class="small-btn" onclick="togglePause()">PAUSE</button>
-        <button class="small-btn" onclick="openResetModal()">RESET</button>
+        <button class="small-btn" onclick="location.reload()">RESET</button>
     </div>
 </div>
 
@@ -48,7 +49,6 @@
     <div id="watermark">SONG, YOUNG-MIN<br>Guitar Lab</div>
     <div id="chord-notify">MATCH!</div>
     <div id="pauseOverlay" class="modal"><h2>PAUSED</h2><button style="background:#6d4c41; color:white; padding:10px; border:none; border-radius:8px;" onclick="togglePause()">RESUME</button></div>
-    <div id="resetModal" class="modal"><h2>RESTART?</h2><button style="background:#bf360c; color:white; padding:10px; border:none; border-radius:8px; margin:5px;" onclick="location.reload()">YES</button><button style="background:#6d4c41; color:white; padding:10px; border:none; border-radius:8px; margin:5px;" onclick="closeResetModal()">NO</button></div>
     <canvas id="tetris"></canvas>
 </div>
 
@@ -84,42 +84,51 @@
 
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
+    // 효과음 변경: 이동은 얇고 가볍게, 바닥 착지는 두껍게
+    function playSfx(type) {
+        initAudio(); const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        if(type==='move') { 
+            osc.type='sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1000, now+0.05);
+            g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now+0.05);
+        } else if(type==='hit') { 
+            osc.type='triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now+0.15);
+            g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.01, now+0.15);
+        } else if(type==='rise') {
+            osc.type='square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(400, now+0.3);
+            g.gain.setValueAtTime(0.05, now); g.gain.linearRampToValueAtTime(0, now+0.3);
+        }
+        osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(now+0.4);
+    }
+
     function playChordSfx(freqs) {
         initAudio(); const now = audioCtx.currentTime;
         freqs.forEach((f, i) => {
             const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
             osc.type = 'triangle'; osc.frequency.setValueAtTime(f, now + (i * 0.05));
-            g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+            g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
             osc.connect(g); g.connect(audioCtx.destination);
             osc.start(now + (i * 0.05)); osc.stop(now + 1.4);
         });
     }
 
-    function playSfx(type) {
-        initAudio(); const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        if(type==='rise') { osc.type='square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(500, now+0.4); g.gain.setValueAtTime(0.08, now); g.gain.linearRampToValueAtTime(0, now+0.4); }
-        else { osc.type='sine'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now+0.1); g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now+0.1); }
-        osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(now+0.4);
-    }
-
     function initBoard() { board = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => ({L:null, f:false, h:false, s:1}))); }
 
+    // 파티클: 점으로 변하며 터짐
     function createParticles(x, y, color) {
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<15; i++) {
             particles.push({
                 x: x * SQ + SQ/2, y: y * SQ + SQ/2,
-                vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
-                life: 1.0, color: color
+                vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
+                life: 1.0, size: 2.5, color: "#ffca28"
             });
         }
     }
 
     function drawParticles() {
         particles.forEach((pt, i) => {
-            ctx.globalAlpha = pt.life;
-            ctx.fillStyle = pt.color;
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, 3, 0, Math.PI*2); ctx.fill();
-            pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.04;
+            ctx.globalAlpha = pt.life; ctx.fillStyle = pt.color;
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI*2); ctx.fill();
+            pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.03;
             if(pt.life <= 0) particles.splice(i, 1);
         });
         ctx.globalAlpha = 1.0;
@@ -132,7 +141,6 @@
         ctxObj.save(); ctxObj.translate(x*size + size/2, y*size + size/2); ctxObj.scale(s, s);
         ctxObj.fillStyle = h ? "#fff" : (L ? (f ? "#ffa726" : (L==='#'||L==='b' ? "#424242" : color)) : "rgba(255,255,255,0.05)");
         ctxObj.fillRect(-size/2+1, -size/2+1, size-2, size-2);
-        ctxObj.strokeStyle = "rgba(255,255,255,0.1)"; ctxObj.strokeRect(-size/2+1, -size/2+1, size-2, size-2);
         if(L) { ctxObj.fillStyle = "#fff"; ctxObj.font = `bold ${size*0.6}px Arial`; ctxObj.textAlign = "center"; ctxObj.fillText(L, 0, size*0.22); }
         ctxObj.restore();
     }
@@ -147,9 +155,7 @@
     function riseBoard() {
         playSfx('rise');
         for (let r = 0; r < ROWS - 1; r++) board[r] = board[r + 1];
-        board[ROWS - 1] = Array.from({length: COLS}, () => ({
-            L: NOTES[Math.floor(Math.random() * 7)], f: true, h: false, s: 1 
-        }));
+        board[ROWS - 1] = Array.from({length: COLS}, () => ({ L: NOTES[Math.floor(Math.random() * 7)], f: true, h: false, s: 1 }));
         if(p && p.collision(0,0)) gameOver = true;
     }
 
@@ -162,7 +168,6 @@
             return false;
         }
         lock() {
-            if(this.y <= 0) { gameOver = true; return; }
             board[this.y][this.x] = {L: this.L, f: false, h: false, s: 1};
             playSfx('hit');
             if(this.L==='#') {
@@ -188,7 +193,7 @@
         findConnectedSameNotes(r, c+1, note, list); findConnectedSameNotes(r, c-1, note, list);
     }
 
-    // 파괴 판정 로직 수정: 화음 혹은 3개 일치만!
+    // 파괴 로직 최종 정밀화: 가로/세로/대각선 3개 블록이 코드가 되거나 동일 문자일 때만
     function checkBoard() {
         let toDel = new Set(); let currentChordName = ""; let chordFreqs = null;
         const dirs = [[0,1],[1,0],[1,1],[1,-1]];
@@ -199,17 +204,13 @@
                 let combo = []; 
                 for(let i=0; i<3; i++) {
                     let nr=r+d[0]*i, nc=c+d[1]*i;
-                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) {
-                        combo.push({r:nr, c:nc, L:board[nr][nc].L});
-                    }
+                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) combo.push({r:nr, c:nc, L:board[nr][nc].L});
                 }
-                
                 if(combo.length===3) {
-                    let sortedTxt = combo.map(v=>v.L).sort().join('');
-                    let match = CHORDS.find(ch=>ch.k===sortedTxt);
+                    let txt = combo.map(v=>v.L).sort().join('');
+                    let match = CHORDS.find(ch=>ch.k===txt);
                     let isSame3 = (combo[0].L === combo[1].L && combo[1].L === combo[2].L);
                     
-                    // 화음이거나 같은 글자/샵 3개인 경우만 Set에 추가
                     if(match || isSame3) {
                         currentChordName = match ? match.n : (combo[0].L==='#' ? "# Sharp" : combo[0].L+" Triple");
                         if(match) chordFreqs = match.f;
@@ -220,27 +221,16 @@
         }
 
         if(toDel.size > 0) {
-            paused = true; 
-            chordNotify.innerText = currentChordName; 
-            chordNotify.style.display = "block";
+            paused = true; chordNotify.innerText = currentChordName; chordNotify.style.display = "block";
             if(chordFreqs) playChordSfx(chordFreqs);
-            
             let start = Date.now();
             function ani() {
                 let now = Date.now() - start;
                 if(now < 800) {
-                    toDel.forEach(key => { 
-                        const [r, c] = key.split(',').map(Number); 
-                        board[r][c].h = true; 
-                        board[r][c].s = 1.0 + (now/800)*0.8; // 글자 커짐 효과
-                    });
+                    toDel.forEach(key => { const [r, c] = key.split(',').map(Number); board[r][c].h = true; board[r][c].s = 1.0 + (now/800)*0.7; });
                     drawBoard(); requestAnimationFrame(ani);
                 } else {
-                    toDel.forEach(key => { 
-                        const [r, c] = key.split(',').map(Number); 
-                        createParticles(c, r, "#ffca28"); // 파티클 생성
-                        board[r][c] = {L:null, f:false, h:false, s:1}; 
-                    });
+                    toDel.forEach(key => { const [r, c] = key.split(',').map(Number); createParticles(c, r); board[r][c] = {L:null, f:false, h:false, s:1}; });
                     score += toDel.size * 10; scoreEl.innerText = score;
                     document.getElementById('level').innerText = Math.floor(score/500) + 1;
                     chordNotify.style.display = "none";
@@ -267,8 +257,6 @@
     }
 
     function togglePause() { if(gameOver) return; isUserPaused = !isUserPaused; document.getElementById('pauseOverlay').style.display = isUserPaused ? 'block' : 'none'; }
-    function openResetModal() { isUserPaused = true; document.getElementById('resetModal').style.display = 'block'; }
-    function closeResetModal() { isUserPaused = false; document.getElementById('resetModal').style.display = 'none'; }
     function getNote() { const r = Math.random(); if(r < 0.05) return '#'; if(r < 0.12) return 'b'; return NOTES[Math.floor(Math.random()*7)]; }
     function drawNext() { nCtx.clearRect(0,0,50,50); drawBlock(nCtx, 0, 0, nextNote, false, false, 1, 50); }
 
@@ -281,10 +269,11 @@
             timeEl.innerText = `${Math.floor(diff/60).toString().padStart(2,'0')}:${(diff%60).toString().padStart(2,'0')}`;
         }
         drawBoard(); if(!gameOver) requestAnimationFrame(run);
-        else { ctx.fillStyle="rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#fff"; ctx.font="20px Arial"; ctx.textAlign="center"; ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2); }
     }
 
     function resize() { SQ = Math.min(document.getElementById('game-container').clientWidth/(COLS+1), document.getElementById('game-container').clientHeight/(ROWS+1)); canvas.width = COLS*SQ; canvas.height = ROWS*SQ; drawBoard(); }
+    
+    // 조작부: 이동 효과음 적용
     document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)&&!isUserPaused) {p.x--; playSfx('move');} });
     document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)&&!isUserPaused) {p.x++; playSfx('move');} });
     document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)&&!isUserPaused) p.y++; });
@@ -292,7 +281,7 @@
 
     window.onload = () => {
         initBoard(); resize(); p = new Piece(getNote()); nextNote = getNote(); drawNext();
-        setTimeout(() => { document.getElementById('splash').style.opacity = '0'; setTimeout(() => { document.getElementById('splash').style.display='none'; gameStart = Date.now(); lastRiseTime = Date.now(); run(); }, 800); }, 1500);
+        gameStart = Date.now(); lastRiseTime = Date.now(); run();
     };
     window.onresize = resize;
 </script>
