@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Pro Edition v9</title>
+    <title>Song Young-Min Guitar Lab - Pro Edition v10</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
-        body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
         #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; transition: opacity 0.8s ease; }
         #top-bar { background: #231914; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 90px; border-bottom: 3px solid #5d4037; }
         .status-item { text-align: center; flex: 1; }
@@ -14,11 +14,11 @@
         .value { font-size: 18px; color: #ffca28; font-weight: bold; }
         #nextContainer { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: inline-block; border: 1px solid #5d4037; }
         #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; }
-        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 2; }
-        #watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; font-weight: 900; color: rgba(62, 39, 35, 0.12); white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; }
-        /* 1. 코드 명칭 표시 복구 */
+        canvas#tetris { background: #757575; border: 4px solid #5d4037; max-width: 95%; max-height: 98%; z-index: 2; position: relative; }
+        /* 주황색 정자 워터마크 추가 */
+        #watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; font-weight: bold; color: rgba(255, 167, 38, 0.2); white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; font-family: 'Malgun Gothic', sans-serif; }
         #chord-notify { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 44px; font-weight: 900; color: #ffca28; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); z-index: 50; display: none; pointer-events: none; animation: pop 1s ease; }
-        @keyframes pop { 0% {transform:scale(0.5); opacity:0;} 20% {transform:scale(1.1); opacity:1;} 80% {transform:scale(1); opacity:1;} 100% {transform:scale(0.8); opacity:0;} }
+        @keyframes pop { 0% {transform:scale(0.5); opacity:0;} 20% {transform:scale(1.2); opacity:1;} 80% {transform:scale(1); opacity:1;} 100% {transform:scale(0.8); opacity:0;} }
         .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #231914; border: 3px solid #ffca28; padding: 20px; text-align: center; z-index: 150; display: none; width: 80%; border-radius: 15px; color: #fff; }
         #controls { background: #231914; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #5d4037; }
         .btn-ctrl { background: #6d4c41; color: #fff; border: none; border-radius: 12px; font-size: 38px; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px #3e2723; }
@@ -30,7 +30,7 @@
 
 <div id="splash">
     <h1 style="color:#ffca28; text-align:center;">SONG, YOUNG-MIN<br>Guitar Lab</h1>
-    <p style="color:#bcaaa4;">Pro Sound & Logic v9</p>
+    <p style="color:#bcaaa4;">Pro Sound & Logic v10</p>
 </div>
 
 <div id="top-bar">
@@ -38,7 +38,7 @@
     <div class="status-item"><span class="label">SCORE</span><span id="score" class="value">0</span></div>
     <div class="status-item"><span class="label">TIME</span><span id="timer" class="value">00:00</span></div>
     <div class="status-item"><span class="label">LEVEL</span><span id="level" class="value">1</span></div>
-    <div style="display:flex; flex-direction:column;">
+    <div style="display:flex; flex-direction:column; gap:2px;">
         <button class="small-btn" onclick="togglePause()">PAUSE</button>
         <button class="small-btn" onclick="openResetModal()">RESET</button>
     </div>
@@ -80,30 +80,50 @@
 
     let board = [], score = 0, paused = false, isUserPaused = false, gameOver = false;
     let p = null, nextNote = '', dropStart = Date.now(), gameStart = null;
-    let lastRiseTime = 0, audioCtx = null;
+    let lastRiseTime = 0, audioCtx = null, particles = [];
 
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
-    // 1. 화음 효과음 복구
     function playChordSfx(freqs) {
         initAudio(); const now = audioCtx.currentTime;
         freqs.forEach((f, i) => {
             const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
             osc.type = 'triangle'; osc.frequency.setValueAtTime(f, now + (i * 0.05));
-            g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+            g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
             osc.connect(g); g.connect(audioCtx.destination);
-            osc.start(now + (i * 0.05)); osc.stop(now + 1.2);
+            osc.start(now + (i * 0.05)); osc.stop(now + 1.4);
         });
     }
 
     function playSfx(type) {
         initAudio(); const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        if(type==='rise') { osc.type='square'; osc.frequency.setValueAtTime(100, now); osc.frequency.exponentialRampToValueAtTime(600, now+0.4); g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now+0.4); }
-        else { osc.type='sine'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now+0.1); g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now+0.1); }
+        if(type==='rise') { osc.type='square'; osc.frequency.setValueAtTime(80, now); osc.frequency.exponentialRampToValueAtTime(500, now+0.4); g.gain.setValueAtTime(0.08, now); g.gain.linearRampToValueAtTime(0, now+0.4); }
+        else { osc.type='sine'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now+0.1); g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now+0.1); }
         osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(now+0.4);
     }
 
     function initBoard() { board = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => ({L:null, f:false, h:false, s:1}))); }
+
+    function createParticles(x, y, color) {
+        for(let i=0; i<10; i++) {
+            particles.push({
+                x: x * SQ + SQ/2, y: y * SQ + SQ/2,
+                vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+                life: 1.0, color: color
+            });
+        }
+    }
+
+    function drawParticles() {
+        particles.forEach((pt, i) => {
+            ctx.globalAlpha = pt.life;
+            ctx.fillStyle = pt.color;
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, 3, 0, Math.PI*2); ctx.fill();
+            pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.04;
+            if(pt.life <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1.0;
+    }
 
     function drawBlock(ctxObj, x, y, L, f, h, s, size) {
         const level = Math.floor(score / 500);
@@ -121,6 +141,7 @@
         ctx.clearRect(0,0,canvas.width,canvas.height);
         for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) drawBlock(ctx, c, r, board[r][c].L, board[r][c].f, board[r][c].h, board[r][c].s, SQ);
         if(p && !gameOver) drawBlock(ctx, p.x, p.y, p.L, false, false, 1, SQ);
+        drawParticles();
     }
 
     function riseBoard() {
@@ -141,6 +162,7 @@
             return false;
         }
         lock() {
+            if(this.y <= 0) { gameOver = true; return; }
             board[this.y][this.x] = {L: this.L, f: false, h: false, s: 1};
             playSfx('hit');
             if(this.L==='#') {
@@ -166,7 +188,7 @@
         findConnectedSameNotes(r, c+1, note, list); findConnectedSameNotes(r, c-1, note, list);
     }
 
-    // 2. 판정 로직 정교화: 화음 매칭 혹은 같은 글자 3개일 때만 파괴
+    // 파괴 판정 로직 수정: 화음 혹은 3개 일치만!
     function checkBoard() {
         let toDel = new Set(); let currentChordName = ""; let chordFreqs = null;
         const dirs = [[0,1],[1,0],[1,1],[1,-1]];
@@ -174,15 +196,20 @@
         for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) {
             if(!board[r][c].L) continue;
             dirs.forEach(d => {
-                let combo = []; for(let i=0; i<3; i++) {
+                let combo = []; 
+                for(let i=0; i<3; i++) {
                     let nr=r+d[0]*i, nc=c+d[1]*i;
-                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) combo.push({r:nr, c:nc, L:board[nr][nc].L});
+                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS && board[nr][nc].L) {
+                        combo.push({r:nr, c:nc, L:board[nr][nc].L});
+                    }
                 }
+                
                 if(combo.length===3) {
-                    let txt = combo.map(v=>v.L).sort().join('');
-                    let match = CHORDS.find(ch=>ch.k===txt);
+                    let sortedTxt = combo.map(v=>v.L).sort().join('');
+                    let match = CHORDS.find(ch=>ch.k===sortedTxt);
                     let isSame3 = (combo[0].L === combo[1].L && combo[1].L === combo[2].L);
                     
+                    // 화음이거나 같은 글자/샵 3개인 경우만 Set에 추가
                     if(match || isSame3) {
                         currentChordName = match ? match.n : (combo[0].L==='#' ? "# Sharp" : combo[0].L+" Triple");
                         if(match) chordFreqs = match.f;
@@ -196,17 +223,24 @@
             paused = true; 
             chordNotify.innerText = currentChordName; 
             chordNotify.style.display = "block";
-            // 1. 화음 소리 재생 복구
-            if(chordFreqs) playChordSfx(chordFreqs); else playSfx('hit');
-
+            if(chordFreqs) playChordSfx(chordFreqs);
+            
             let start = Date.now();
             function ani() {
                 let now = Date.now() - start;
-                if(now < 800) { // 애니메이션 시간 약간 연장 (학습 가독성)
-                    toDel.forEach(key => { const [r, c] = key.split(',').map(Number); board[r][c].h = true; board[r][c].s = 1.3; });
+                if(now < 800) {
+                    toDel.forEach(key => { 
+                        const [r, c] = key.split(',').map(Number); 
+                        board[r][c].h = true; 
+                        board[r][c].s = 1.0 + (now/800)*0.8; // 글자 커짐 효과
+                    });
                     drawBoard(); requestAnimationFrame(ani);
                 } else {
-                    toDel.forEach(key => { const [r, c] = key.split(',').map(Number); board[r][c] = {L:null, f:false, h:false, s:1}; });
+                    toDel.forEach(key => { 
+                        const [r, c] = key.split(',').map(Number); 
+                        createParticles(c, r, "#ffca28"); // 파티클 생성
+                        board[r][c] = {L:null, f:false, h:false, s:1}; 
+                    });
                     score += toDel.size * 10; scoreEl.innerText = score;
                     document.getElementById('level').innerText = Math.floor(score/500) + 1;
                     chordNotify.style.display = "none";
@@ -241,17 +275,18 @@
     function run() {
         if(!paused && !isUserPaused && !gameOver) {
             let now = Date.now();
-            if(now - dropStart > 900) { if(!p.collision(0,1)) { p.y++; } else { p.lock(); } dropStart = now; }
+            if(now - dropStart > 850) { if(!p.collision(0,1)) { p.y++; } else { p.lock(); } dropStart = now; }
             if(gameStart && now - lastRiseTime > 60000) { riseBoard(); lastRiseTime = now; }
             let diff = Math.floor((now - gameStart)/1000);
             timeEl.innerText = `${Math.floor(diff/60).toString().padStart(2,'0')}:${(diff%60).toString().padStart(2,'0')}`;
         }
         drawBoard(); if(!gameOver) requestAnimationFrame(run);
+        else { ctx.fillStyle="rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#fff"; ctx.font="20px Arial"; ctx.textAlign="center"; ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2); }
     }
 
     function resize() { SQ = Math.min(document.getElementById('game-container').clientWidth/(COLS+1), document.getElementById('game-container').clientHeight/(ROWS+1)); canvas.width = COLS*SQ; canvas.height = ROWS*SQ; drawBoard(); }
-    document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)&&!isUserPaused) p.x--; });
-    document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)&&!isUserPaused) p.x++; });
+    document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)&&!isUserPaused) {p.x--; playSfx('move');} });
+    document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)&&!isUserPaused) {p.x++; playSfx('move');} });
     document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)&&!isUserPaused) p.y++; });
     document.getElementById('dropBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!isUserPaused){while(!p.collision(0,1)) p.y++; p.lock();} });
 
