@@ -3,44 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Ultimate</title>
+    <title>Song Young-Min Guitar Lab - Ultimate v7</title>
     <style>
+        /* 기본 레이아웃 및 전체 배경 (연한 갈색) */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
-        /* 4. 전체 배경: 연한 갈색 */
         body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
         
+        /* 인트로 스플래시 화면 */
         #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #3d2b1f; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; transition: opacity 0.8s ease; }
         
+        /* 상단 바 */
         #top-bar { background: #5d4037; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 90px; border-bottom: 3px solid #3e2723; color: #fff; }
         .status-item { text-align: center; flex: 1; }
-        .label { font-size: 10px; color: #d7ccc8; display: block; }
+        .label { font-size: 10px; color: #d7ccc8; display: block; margin-bottom: 2px; }
         .value { font-size: 18px; color: #ffeb3b; font-weight: bold; }
         
-        #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; overflow: hidden; }
-        
-        /* 3. 정자체 워터마크 (60% 투명도) */
+        /* 게임 화면 및 워터마크 */
+        #game-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #d7ccc8; }
         #watermark { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 24px; font-weight: 900; color: rgba(62, 39, 35, 0.15); 
-            white-space: nowrap; pointer-events: none; z-index: 1; text-align: center;
+            font-size: 26px; font-weight: 900; color: rgba(62, 39, 35, 0.12); 
+            white-space: nowrap; pointer-events: none; z-index: 1; text-align: center; line-height: 1.2;
         }
 
-        /* 4. 게임 배경: 회색 */
-        canvas#tetris { background: #757575; border: 4px solid #3e2723; z-index: 2; }
+        /* 게임 배경 (회색) */
+        canvas#tetris { background: #757575; border: 4px solid #3e2723; z-index: 2; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
         
-        #chord-notify { position: absolute; top: 30%; width: 100%; text-align: center; font-size: 40px; font-weight: 900; color: #ffeb3b; z-index: 50; display: none; pointer-events: none; text-shadow: 2px 2px 5px #000; }
+        #chord-notify { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 42px; font-weight: 900; color: #ffeb3b; z-index: 50; display: none; pointer-events: none; text-shadow: 2px 2px 8px #000; animation: pop 0.6s ease; }
+        @keyframes pop { 0% {transform:scale(0.5);} 50% {transform:scale(1.1);} 100% {transform:scale(1);} }
 
+        /* 하단 컨트롤러 */
         #controls { background: #5d4037; display: grid; grid-template-columns: 1fr 1fr 1fr 0.6fr; gap: 8px; padding: 12px; height: 130px; border-top: 3px solid #3e2723; }
         .btn-ctrl { background: #8d6e63; color: #fff; border: none; border-radius: 12px; font-size: 38px; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px #3e2723; }
         .btn-drop { background: #bf360c; font-size: 12px; font-weight: 900; height: 60%; align-self: center; border-radius: 8px; }
-        .small-btn { padding: 6px 10px; font-size: 11px; background: #3e2723; color: #fff; border: 1px solid #8d6e63; border-radius: 4px; margin-bottom: 3px; }
+        .small-btn { padding: 8px 12px; font-size: 11px; font-weight: bold; background: #3e2723; color: #fff; border: 1px solid #8d6e63; border-radius: 4px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
 <div id="splash">
     <h1 style="color:#ffca28; text-align:center; font-size: 28px;">SONG, YOUNG-MIN<br>Guitar Lab</h1>
-    <p style="color:#bcaaa4;">Loading Music & Art...</p>
+    <p style="color:#bcaaa4;">Pro Sound & Logic v7</p>
 </div>
 
 <div id="top-bar">
@@ -81,10 +84,10 @@
     let SQ = 20;
     const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
     const CHORDS = [
-        {k:'CEG', n:'C Major', f:[261, 329, 392]}, {k:'ADF', n:'D minor', f:[293, 349, 440]},
-        {k:'BEG', n:'E minor', f:[329, 392, 493]}, {k:'ACF', n:'F Major', f:[349, 440, 523]},
-        {k:'BDG', n:'G Major', f:[392, 493, 587]}, {k:'ACE', n:'A minor', f:[440, 523, 659]},
-        {k:'BDF', n:'Bm(b5)', f:[493, 587, 698]}
+        {k:'CEG', n:'C Major', f:[261.6, 329.6, 392.0]}, {k:'ADF', n:'D minor', f:[293.6, 349.2, 440.0]},
+        {k:'BEG', n:'E minor', f:[329.6, 392.0, 493.8]}, {k:'ACF', n:'F Major', f:[349.2, 440.0, 523.2]},
+        {k:'BDG', n:'G Major', f:[392.0, 493.8, 587.3]}, {k:'ACE', n:'A minor', f:[440.0, 523.2, 659.2]},
+        {k:'BDF', n:'Bm(b5)', f:[493.8, 587.3, 698.4]}
     ];
 
     let board = [], score = 0, paused = false, gameOver = false;
@@ -93,15 +96,15 @@
     let audioCtx = null;
     let particles = [];
 
-    // 1. 나무 블록 효과음 (복구)
+    // [사운드] 나무 블록 타격음
     function playWoodHit() {
         initAudio();
         const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const g = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
         g.gain.setValueAtTime(0.3, now);
         g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.connect(g); g.connect(audioCtx.destination);
@@ -120,22 +123,22 @@
             const osc = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(f, now + (i * 0.08));
-            g.gain.setValueAtTime(0.15, now + (i * 0.08));
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.6 + (i * 0.08));
+            osc.frequency.setValueAtTime(f, now + (i * 0.1));
+            g.gain.setValueAtTime(0.2, now + (i * 0.1));
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.8 + (i * 0.1));
             osc.connect(g); g.connect(audioCtx.destination);
-            osc.start(now + (i * 0.08)); osc.stop(now + 0.8 + (i * 0.08));
+            osc.start(now + (i * 0.1)); osc.stop(now + 1.0 + (i * 0.1));
         });
     }
 
-    // 3. 특수 폭발 파티클
+    // [연출] 화려한 파티클 폭발
     class Particle {
-        constructor(x, y, color, speedScale = 1) {
+        constructor(x, y, color, isSpecial = false) {
             this.x = x; this.y = y;
-            this.size = Math.random() * 5 + 2;
-            this.speedX = (Math.random() - 0.5) * 10 * speedScale;
-            this.speedY = (Math.random() - 0.5) * 10 * speedScale - 2;
-            this.gravity = 0.3;
+            this.size = isSpecial ? Math.random() * 6 + 3 : Math.random() * 4 + 1;
+            this.speedX = (Math.random() - 0.5) * (isSpecial ? 15 : 8);
+            this.speedY = (Math.random() - 0.5) * (isSpecial ? 15 : 8) - 2;
+            this.gravity = 0.35;
             this.color = color;
             this.life = 1.0;
             this.decay = Math.random() * 0.02 + 0.02;
@@ -159,8 +162,8 @@
 
     function drawBoard() {
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        // 4. 하얀색 눈금선
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        // 하얀색 가이드 눈금선
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
         ctx.lineWidth = 1;
         for(let r=0; r<=ROWS; r++) { ctx.beginPath(); ctx.moveTo(0, r*SQ); ctx.lineTo(COLS*SQ, r*SQ); ctx.stroke(); }
         for(let c=0; c<=COLS; c++) { ctx.beginPath(); ctx.moveTo(c*SQ, 0); ctx.lineTo(c*SQ, ROWS*SQ); ctx.stroke(); }
@@ -181,21 +184,22 @@
         ctxObj.translate(x*size + size/2, y*size + size/2);
         ctxObj.scale(s, s);
         
-        // 4. 주황색 배경 + 블랙 테두리
+        // 블록 색상 결정 (500점마다 테마 변경)
         const themeStep = Math.floor(score / 500);
-        let baseColor = (themeStep % 2 === 0) ? "#FF8C00" : "#7E57C2"; 
-        if(L === '#') baseColor = "#424242";
-        if(L === 'b') baseColor = "#D32F2F";
+        let baseColor = (themeStep % 3 === 0) ? "#FF8C00" : (themeStep % 3 === 1 ? "#9C27B0" : "#009688");
+        
+        if(L === '#') baseColor = "#424242"; // 특수 블록 어두운 회색
+        if(L === 'b') baseColor = "#D32F2F"; // 폭탄 블록 빨간색
 
-        ctxObj.fillStyle = h ? "#fff" : baseColor;
+        ctxObj.fillStyle = h ? "#FFFFFF" : baseColor;
         ctxObj.fillRect(-size/2+1, -size/2+1, size-2, size-2);
         
-        ctxObj.strokeStyle = "#000"; // 블랙 테두리
+        ctxObj.strokeStyle = "#000000"; // 블랙 테두리
         ctxObj.lineWidth = 1.5;
         ctxObj.strokeRect(-size/2+1, -size/2+1, size-2, size-2);
 
         if(L) {
-            ctxObj.fillStyle = "#fff";
+            ctxObj.fillStyle = "#FFFFFF";
             ctxObj.font = `bold ${size*0.6}px Arial`; ctxObj.textAlign = "center"; ctxObj.fillText(L, 0, size*0.22);
         }
         ctxObj.restore();
@@ -219,10 +223,14 @@
         lock() {
             if(this.y <= 0) { gameOver = true; alert("Game Over!"); return; }
             board[this.y][this.x] = {L: this.L, f: false, h: false, s: 1};
-            playWoodHit(); // 1. 나무 소리
+            playWoodHit();
             
             if(this.L === '#') {
-                // 기존 # 로직 유지 (특수 기능)
+                // # 설치 시 무작위 블록 생성 로직 유지
+                for(let i=0; i<4; i++){
+                    let rr=Math.floor(Math.random()*ROWS), rc=Math.floor(Math.random()*COLS);
+                    if(!board[rr][rc].L) board[rr][rc]={L:NOTES[Math.floor(Math.random()*7)],f:true,h:false,s:1};
+                }
             } else if(this.L === 'b') {
                 for(let r=this.y-1; r<=this.y+1; r++) for(let c=this.x-1; c<=this.x+1; c++)
                     if(r>=0 && r<ROWS && c>=0 && c<COLS) board[r][c]={L:null,f:false,h:false,s:1};
@@ -245,7 +253,7 @@
     function checkBoard() {
         let toDel = new Set(); 
         let currentChordFreqs = null;
-        let isSpecialExplosion = false; // 3. 특수 폭발 여부
+        let isSpecialExplosion = false;
         const dirs = [[0,1],[1,0],[1,1],[1,-1]];
 
         for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) {
@@ -259,13 +267,11 @@
                 if(combo.length===3) {
                     let txt = combo.map(v=>v.L).sort().join('');
                     let match = CHORDS.find(ch=>ch.k===txt);
-                    
-                    // 2. #블록 3개 뭉침 체크 포함
                     let isSame = (combo[0].L===combo[1].L && combo[1].L===combo[2].L);
 
                     if(match || isSame) {
                         if(match) currentChordFreqs = match.f;
-                        if(isSame) isSpecialExplosion = true; // CCC나 ###은 특수 폭발
+                        if(isSame) isSpecialExplosion = true; 
                         combo.forEach(pos => findConnectedSameNotes(pos.r, pos.c, board[pos.r][pos.c].L, toDel));
                     }
                 }
@@ -282,17 +288,15 @@
                 if(now < 500) {
                     toDel.forEach(key => {
                         const [r, c] = key.split(',').map(Number);
-                        board[r][c].h = true; board[r][c].s = 1 + (now/500 * 0.4);
+                        board[r][c].h = true; board[r][c].s = 1 + (now/500 * 0.5);
                     });
                     drawBoard(); requestAnimationFrame(ani);
                 } else {
                     toDel.forEach(key => {
                         const [r, c] = key.split(',').map(Number);
-                        // 3. 폭발 연출 차별화
-                        let pCount = isSpecialExplosion ? 25 : 10;
-                        let pColor = isSpecialExplosion ? "#FFFFFF" : "#FFEB3B";
-                        let pSpeed = isSpecialExplosion ? 1.8 : 1;
-                        for(let i=0; i<pCount; i++) particles.push(new Particle(c*SQ + SQ/2, r*SQ + SQ/2, pColor, pSpeed));
+                        let pCount = isSpecialExplosion ? 25 : 12;
+                        let pColor = isSpecialExplosion ? "#FFFFFF" : "#FFD600";
+                        for(let i=0; i<pCount; i++) particles.push(new Particle(c*SQ + SQ/2, r*SQ + SQ/2, pColor, isSpecialExplosion));
                         board[r][c] = {L:null, f:false, h:false, s:1};
                     });
                     score += toDel.size * 10;
@@ -314,6 +318,7 @@
     }
 
     function riseBottomLine() {
+        if(gameOver) return;
         for(let r=0; r<ROWS-1; r++) board[r] = [...board[r+1]];
         board[ROWS-1] = Array.from({length: COLS}, () => ({
             L: NOTES[Math.floor(Math.random()*7)], f:false, h:false, s:1
