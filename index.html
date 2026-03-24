@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Song Young-Min Guitar Lab - Ultimate Guitar v14</title>
+    <title>Song Young-Min Guitar Lab - Ultimate Guitar v15</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
         body { background-color: #d7ccc8; margin: 0; color: #3e2723; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
@@ -27,9 +27,11 @@
             letter-spacing: 1px; line-height: 1.4;
         }
 
-        /* [3. 하단 고정 문구] */
+        /* [3. 하단 고정 문구: 직접 위치 조정 가능] */
         #watermark-bottom {
-            position: absolute; middle: 20px; width: 100%; text-align: center;
+            position: absolute; 
+            bottom: 20px; /* ★ bottom 숫자를 조정하여 높낮이를 맞추세요 */
+            width: 100%; text-align: center;
             font-size: 12px; font-weight: bold; color: rgba(255, 180, 80, 0.3);
             pointer-events: none; z-index: 6; letter-spacing: 1px;
         }
@@ -90,7 +92,6 @@
     let SQ = 20;
     const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-    // [청음용 정확한 음계 주파수]
     const NOTE_FREQS = { 'C': 261.63, 'D': 293.66, 'E': 329.63, 'F': 349.23, 'G': 392.00, 'A': 440.00, 'B': 493.88, '#': 523.25, 'b': 246.94 };
     
     const CHORDS = [
@@ -106,7 +107,6 @@
 
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
-    // [좌우 이동 시 해당하는 음 소리 재생]
     function playNoteSfx(noteChar) {
         initAudio(); if(!audioCtx) return;
         const now = audioCtx.currentTime;
@@ -120,7 +120,6 @@
         osc.start(); osc.stop(now + 0.3);
     }
 
-    // [바닥 착지 시 묵직한 소리]
     function playHitSfx() {
         initAudio(); const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -141,7 +140,6 @@
         });
     }
 
-    // [더 화려해진 파티클 시스템]
     class Particle {
         constructor(x, y) {
             this.x = x; this.y = y;
@@ -190,7 +188,7 @@
             if(this.L==='#') {
                 let count=0; while(count<4){
                     let rr=Math.floor(Math.random()*ROWS), rc=Math.floor(Math.random()*COLS);
-                    if(!board[rr][rc].L){board[rr][rc]={L:NOTES[Math.floor(Math.random()*7)],f:true,h:false,s:1};count++;}
+                    if(!board[rr][rc].L){board[rr][rc]={L:NOTES[Math.floor(Math.random()*7)],f:false,h:false,s:1};count++;}
                 }
             } else if(this.L==='b') {
                 for(let r=this.y-1; r<=this.y+1; r++) for(let c=this.x-1; c<=this.x+1; c++)
@@ -274,9 +272,18 @@
         if(!paused && !isUserPaused && !gameOver) {
             let now = Date.now();
             if(now - dropStart > 850) { if(!p.collision(0,1)) { p.y++; } else { p.lock(); } dropStart = now; }
+            
+            // [오류 수정]: 1분마다 상승하는 블록 로직
             if(gameStart && now - lastRiseTime > 60000) {
                 for (let r = 0; r < ROWS - 1; r++) board[r] = board[r + 1];
-                board[ROWS - 1] = Array.from({length: COLS}, () => ({ L: NOTES[Math.floor(Math.random() * 7)], f: false, h: false, s: 1 }));
+                
+                // ★ f: false로 생성하여 즉시 고정된 블록으로 인식되게 함 (터짐 방지)
+                board[ROWS - 1] = Array.from({length: COLS}, () => ({ 
+                    L: NOTES[Math.floor(Math.random() * 7)], 
+                    f: false, 
+                    h: false, 
+                    s: 1 
+                }));
                 lastRiseTime = now;
             }
             let diff = Math.floor((now - gameStart)/1000);
@@ -285,7 +292,6 @@
         drawBoard(); if(!gameOver) requestAnimationFrame(run);
     }
 
-    // [입력 컨트롤: 좌우 이동 시 해당하는 알파벳의 실제 음 재생]
     document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(-1,0)&&!isUserPaused) { p.x--; playNoteSfx(p.L); } });
     document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(1,0)&&!isUserPaused) { p.x++; playNoteSfx(p.L); } });
     document.getElementById('downBtn').addEventListener('touchstart', (e) => { e.preventDefault(); if(!p.collision(0,1)&&!isUserPaused) p.y++; });
