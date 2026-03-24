@@ -276,7 +276,7 @@
             if(now - dropStart > 850) { if(!p.collision(0,1)) { p.y++; } else { p.lock(); } dropStart = now; }
             if(gameStart && now - lastRiseTime > 60000) {
                 for (let r = 0; r < ROWS - 1; r++) board[r] = board[r + 1];
-                board[ROWS - 1] = Array.from({length: COLS}, () => ({ L: NOTES[Math.floor(Math.random() * 7)], f: true, h: false, s: 1 }));
+                board[ROWS - 1] = Array.from({length: COLS}, () => ({ L: NOTES[Math.floor(Math.random() * 7)], f: false, h: false, s: 1 }));
                 lastRiseTime = now;
             }
             let diff = Math.floor((now - gameStart)/1000);
